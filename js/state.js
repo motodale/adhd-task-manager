@@ -19,8 +19,7 @@ const PRESETS = {
     { label: '🤸 Stretch', weight: 1, color: '#10b981' },
     { label: '☕ Caffinate', weight: 1, color: '#f59e0b' },
     { label: '📧 Check Emails', weight: 1, color: '#8b5cf6' },
-    { label: '📅 Reminders', weight: 1, color: '#22d3ee' },
-    { label: 'Referals', weight: 1, color: '#34d399' }
+    { label: '📅 Reminders', weight: 1, color: '#22d3ee' }
   ],
   whisky: [
     { label: '🥃 Laphroaig 10', weight: 1 },
