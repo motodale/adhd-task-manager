@@ -68,6 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeName = currentState.getThemeDetails().name;
     themeTogglerBtn.querySelector('span').textContent = `Theme: ${themeName}`;
 
+    // Toggle Title and Brand Header for Islay Easter Egg
+    const brandHeader = document.querySelector('.brand h1');
+    if (currentState.theme === 'islay') {
+      document.title = '🥃 SCOTCH TIME! 🥃';
+      if (brandHeader) brandHeader.textContent = '🥃 SCOTCH TIME! 🥃';
+    } else {
+      document.title = 'The Task Wheel';
+      if (brandHeader) brandHeader.textContent = 'The Task Wheel';
+    }
+
     if (currentState.isSpinning) {
       spinBtn.disabled = true;
       spinBtn.textContent = '🎰';
