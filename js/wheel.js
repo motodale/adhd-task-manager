@@ -24,8 +24,17 @@ class WheelController {
   }
 
   initCanvas() {
-    const rect = this.canvas.parentElement.getBoundingClientRect();
-    const size = Math.min(rect.width, rect.height, 480);
+    const wrapper = this.canvas.parentElement;
+    const parentSection = wrapper ? wrapper.parentElement : null;
+    let availableWidth = parentSection ? parentSection.getBoundingClientRect().width : window.innerWidth;
+    if (availableWidth < 100) {
+      availableWidth = Math.min(window.innerWidth, 1200);
+    }
+    
+    const targetSize = this.state.wheelSize || 480;
+    
+    // Ensure size fits nicely in the parent container, clamping between 300px and the targetSize
+    const size = Math.max(300, Math.min(availableWidth * 0.95, targetSize));
     
     // High DPI Retina Support
     const dpr = window.devicePixelRatio || 1;
@@ -33,6 +42,12 @@ class WheelController {
     this.canvas.height = size * dpr;
     this.canvas.style.width = `${size}px`;
     this.canvas.style.height = `${size}px`;
+    
+    // Dynamically adjust wrapper size so absolute layout items (pointer, center button) scale together
+    if (wrapper) {
+      wrapper.style.width = `${size}px`;
+      wrapper.style.height = `${size}px`;
+    }
     
     this.ctx.scale(dpr, dpr);
     this.radius = size / 2;

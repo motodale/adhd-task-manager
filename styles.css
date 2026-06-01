@@ -194,8 +194,8 @@ header {
 
 .wheel-wrapper {
   position: relative;
-  width: min(480px, 85vw);
-  height: min(480px, 85vw);
+  width: min(750px, 90vw);
+  height: min(750px, 90vw);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -64,6 +64,7 @@ class StateManager {
     this.history = [];
     this.spinDuration = 5; // seconds
     this.volume = 0.7; // 0 to 1
+    this.wheelSize = 480; // default size in pixels
     this.theme = 'cyberpunk';
     this.removeWinnerOnLand = false;
     this.isSpinning = false;
@@ -121,6 +122,13 @@ class StateManager {
       if (storedRemoveWinner) {
         this.removeWinnerOnLand = storedRemoveWinner === 'true';
       }
+
+      const storedWheelSize = localStorage.getItem('spinwheel_size');
+      if (storedWheelSize) {
+        this.wheelSize = parseInt(storedWheelSize, 10);
+      } else {
+        this.wheelSize = 480;
+      }
     } catch (e) {
       console.error('Failed to load local storage state:', e);
       this.segments = [...PRESETS.decisions];
@@ -138,6 +146,7 @@ class StateManager {
       localStorage.setItem('spinwheel_volume', this.volume.toString());
       localStorage.setItem('spinwheel_theme', themeToSave);
       localStorage.setItem('spinwheel_remove_winner', this.removeWinnerOnLand.toString());
+      localStorage.setItem('spinwheel_size', this.wheelSize.toString());
     } catch (e) {
       console.error('Failed to save to local storage:', e);
     }
@@ -145,6 +154,12 @@ class StateManager {
 
   setRemoveWinner(val) {
     this.removeWinnerOnLand = !!val;
+    this.saveToStorage();
+    this.notify();
+  }
+
+  setWheelSize(val) {
+    this.wheelSize = parseInt(val, 10);
     this.saveToStorage();
     this.notify();
   }

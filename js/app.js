@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const volumeInput = document.getElementById('volumeInput');
   const volumeVal = document.getElementById('volumeVal');
   const removeWinnerToggle = document.getElementById('removeWinnerToggle');
+  const wheelSizeInput = document.getElementById('wheelSizeInput');
+  const wheelSizeVal = document.getElementById('wheelSizeVal');
   
   // Modal Elements
   const winnerModal = document.getElementById('winnerModal');
@@ -58,9 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
   volumeVal.textContent = `${Math.round(state.volume * 100)}%`;
   audioSynth.setVolume(state.volume);
   removeWinnerToggle.checked = state.removeWinnerOnLand;
+  wheelSizeInput.value = state.wheelSize;
+  wheelSizeVal.textContent = `${state.wheelSize}px`;
 
   // Subscribe to State modifications to automatically refresh the view
   state.subscribe((currentState) => {
+    wheel.initCanvas();
     wheel.draw();
     renderSegmentList(currentState.segments);
     renderHistoryList(currentState.history);
@@ -252,6 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Toggle remove winner on land
   removeWinnerToggle.addEventListener('change', (e) => {
     state.setRemoveWinner(e.target.checked);
+  });
+
+  // Config: Wheel Size slider
+  wheelSizeInput.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value, 10);
+    state.setWheelSize(val);
+    wheelSizeVal.textContent = `${val}px`;
   });
 
   // Easter Egg: Dale click event triggers premium Islay whisky theme
