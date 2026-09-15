@@ -46,18 +46,12 @@ class ConfettiParticle {
 
 class ConfettiSystem {
   constructor() {
-    this.canvas = null;
-    this.ctx = null;
+    this.canvas = document.getElementById('confettiCanvas');
+    this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
     this.particles = [];
     this.animationId = null;
     this.colors = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#fbbf24', '#f97316'];
-  }
 
-  init(canvasId) {
-    this.canvas = document.getElementById(canvasId);
-    if (!this.canvas) return;
-    this.ctx = this.canvas.getContext('2d');
-    
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
   }
@@ -70,7 +64,6 @@ class ConfettiSystem {
   }
 
   burst(x, y, particleCount = 120) {
-    this.init('confettiCanvas');
     if (!this.ctx) return;
 
     for (let i = 0; i < particleCount; i++) {

@@ -12,7 +12,9 @@
   --card-bg: rgba(18, 20, 32, 0.6);
   --card-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Duration + easing only. Bare `transition: var(--transition-smooth)` still
+     means "all"; naming a property in front of it now works too. */
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --font-family: 'Outfit', sans-serif;
   --wheel-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
 }
@@ -126,6 +128,17 @@ header {
   height: 2.25rem;
   color: var(--accent-primary);
   filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+/* Inline Lucide-equivalent icons */
+.icon {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .header-controls {
@@ -287,6 +300,57 @@ canvas#wheelCanvas {
   color: var(--text-main);
 }
 
+.items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.items-header .card-title {
+  margin-bottom: 0;
+}
+
+#newItemWeight {
+  max-width: 140px;
+}
+
+#newItemMultiplier {
+  max-width: 150px;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.toggle-row > span {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+#daleEasterEgg {
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 700;
+  color: var(--accent-primary);
+  text-underline-offset: 3px;
+}
+
+/* Wheel-editing controls are locked while the wheel is spinning.
+   Sliders and history stay live on purpose. */
+body.spinning .items-card,
+body.spinning .presets-card,
+body.spinning .toggle-row,
+body.spinning .theme-btn {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .card-title svg {
   width: 1.5rem;
   height: 1.5rem;
@@ -355,25 +419,10 @@ canvas#wheelCanvas {
 }
 
 /* Custom scrollbar */
-.segment-list::-webkit-scrollbar,
-.history-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.segment-list::-webkit-scrollbar-track,
-.history-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.segment-list::-webkit-scrollbar-thumb,
-.history-list::-webkit-scrollbar-thumb {
-  background: var(--card-border);
-  border-radius: 4px;
-}
-
-.segment-list::-webkit-scrollbar-thumb:hover,
-.history-list::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
+.segment-list,
+.history-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
 }
 
 .segment-item {

@@ -1,8 +1,8 @@
 // Canvas Wheel Controller & Physics Engine
 
 class WheelController {
-  constructor(canvasId, state, onWinCallback) {
-    this.canvas = document.getElementById(canvasId);
+  constructor(state, onWinCallback) {
+    this.canvas = document.getElementById('wheelCanvas');
     if (!this.canvas) return;
     this.ctx = this.canvas.getContext('2d');
     this.state = state;
@@ -56,10 +56,7 @@ class WheelController {
   // Helper to determine text contrast based on Hex color luminance
   getContrastColor(hexColor) {
     if (!hexColor) return '#ffffff';
-    let hex = hexColor.replace('#', '');
-    if (hex.length === 3) {
-      hex = hex.split('').map(char => char + char).join('');
-    }
+    const hex = hexColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
@@ -214,53 +211,35 @@ class WheelController {
     }
   }
 
-  checkTicking() {
+  // Which segment is currently under the pointer at the top of the wheel
+  segmentIndexAtPointer() {
     const segments = this.state.segments;
-    if (segments.length <= 1) return;
-
     const totalWeight = segments.reduce((sum, s) => sum + s.weight, 0);
     const pointerAngle = 3 * Math.PI / 2;
-    
+
     const normalizedRotation = (pointerAngle - this.rotation) % (Math.PI * 2);
     const targetAngle = normalizedRotation < 0 ? normalizedRotation + Math.PI * 2 : normalizedRotation;
 
     let accumulatedAngle = 0;
-    let activeSegmentIndex = 0;
-
     for (let i = 0; i < segments.length; i++) {
-      const sliceAngle = (segments[i].weight / totalWeight) * Math.PI * 2;
-      accumulatedAngle += sliceAngle;
-      if (targetAngle < accumulatedAngle) {
-        activeSegmentIndex = i;
-        break;
-      }
+      accumulatedAngle += (segments[i].weight / totalWeight) * Math.PI * 2;
+      if (targetAngle < accumulatedAngle) return i;
     }
+    return 0;
+  }
 
-    if (activeSegmentIndex !== this.lastTickIndex) {
+  checkTicking() {
+    if (this.state.segments.length <= 1) return;
+    const index = this.segmentIndexAtPointer();
+    if (index !== this.lastTickIndex) {
       window.audioSynth.playTick();
-      this.lastTickIndex = activeSegmentIndex;
+      this.lastTickIndex = index;
     }
   }
 
   getWinningSegment() {
-    const segments = this.state.segments;
-    if (segments.length === 0) return null;
-
-    const totalWeight = segments.reduce((sum, s) => sum + s.weight, 0);
-    const pointerAngle = 3 * Math.PI / 2;
-    
-    const normalizedRotation = (pointerAngle - this.rotation) % (Math.PI * 2);
-    const targetAngle = normalizedRotation < 0 ? normalizedRotation + Math.PI * 2 : normalizedRotation;
-
-    let accumulatedAngle = 0;
-    for (let i = 0; i < segments.length; i++) {
-      const sliceAngle = (segments[i].weight / totalWeight) * Math.PI * 2;
-      accumulatedAngle += sliceAngle;
-      if (targetAngle < accumulatedAngle) {
-        return segments[i];
-      }
-    }
-    return segments[0];
+    if (this.state.segments.length === 0) return null;
+    return this.state.segments[this.segmentIndexAtPointer()];
   }
 }
 

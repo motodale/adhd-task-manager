@@ -8,18 +8,18 @@ const PRESETS = {
     { label: '🔄 Spin Again', weight: 1, color: '#6366f1' }
   ],
   numbers: [
-    { label: '1', weight: 1, color: '#f87171' },
-    { label: '2', weight: 1, color: '#fbbf24' },
-    { label: '3', weight: 1, color: '#34d399' },
-    { label: '4', weight: 1, color: '#22d3ee' },
-    { label: '5', weight: 1, color: '#60a5fa' }
+    { label: '1', weight: 1 },
+    { label: '2', weight: 1 },
+    { label: '3', weight: 1 },
+    { label: '4', weight: 1 },
+    { label: '5', weight: 1 }
   ],
   daily: [
-    { label: '🥤Drink Water', weight: 1, color: '#3b82f6' },
-    { label: '🤸 Stretch', weight: 1, color: '#10b981' },
-    { label: '☕ Caffinate', weight: 1, color: '#f59e0b' },
-    { label: '📧 Check Emails', weight: 1, color: '#8b5cf6' },
-    { label: '📅 Reminders', weight: 1, color: '#22d3ee' }
+    { label: '🥤Drink Water', weight: 1 },
+    { label: '🤸 Stretch', weight: 1 },
+    { label: '☕ Caffinate', weight: 1 },
+    { label: '📧 Check Emails', weight: 1 },
+    { label: '📅 Reminders', weight: 1 }
   ],
   whisky: [
     { label: '🥃 Laphroaig 10', weight: 1 },
@@ -37,15 +37,19 @@ const PRESETS = {
   ]
 };
 
-const THEMES = [
-  { id: 'cyberpunk', name: 'Cyberpunk', bg: '#0a0b10' },
-  { id: 'sunset', name: 'Sunset Glow', bg: '#0f0a0a' },
-  { id: 'pastel', name: 'Pastel Dream', bg: '#0b0f19' },
-  { id: 'matrix', name: 'Matrix Green', bg: '#050805' },
-  { id: 'cozy', name: 'Cozy Espresso', bg: '#2a2421' },
-  { id: 'cottage-core', name: 'Cottage Core', bg: '#1c1917' },
-  { id: 'goblin-core', name: 'Goblin Core', bg: '#161412' }
-];
+// id -> display name. Islay is reachable only via the easter egg, never the toggle.
+const THEMES = {
+  cyberpunk: 'Cyberpunk',
+  sunset: 'Sunset Glow',
+  pastel: 'Pastel Dream',
+  matrix: 'Matrix Green',
+  cozy: 'Cozy Espresso',
+  'cottage-core': 'Cottage Core',
+  'goblin-core': 'Goblin Core',
+  islay: 'Islay Highlands'
+};
+
+const THEME_CYCLE = Object.keys(THEMES).filter(id => id !== 'islay');
 
 const THEME_PALETTES = {
   cyberpunk: ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#fbbf24', '#f472b6', '#22d3ee', '#818cf8', '#a3e635', '#ff5722', '#06b6d4', '#7c3aed'],
@@ -58,6 +62,26 @@ const THEME_PALETTES = {
   islay: ['#D97706', '#8B4513', '#2e3b26', '#4a5e3a', '#8B7355', '#a0522d', '#854d0e', '#7a8b7b', '#b45309', '#5b6f3a', '#c2410c', '#3d2516']
 };
 
+const STORAGE_KEY = 'spinwheel';
+const SAVED_FIELDS = ['segments', 'history', 'spinDuration', 'volume', 'wheelSize', 'theme', 'removeWinnerOnLand'];
+
+// Reads the seven pre-consolidation spinwheel_* keys so existing visitors keep
+// their wheel. Safe to delete once everyone has loaded the site once.
+function readLegacyStorage() {
+  const get = k => localStorage.getItem('spinwheel_' + k);
+  if (!get('segments')) return null;
+  const num = (k, fallback) => (get(k) === null ? fallback : parseFloat(get(k)));
+  return {
+    segments: JSON.parse(get('segments')),
+    history: JSON.parse(get('history') || '[]'),
+    spinDuration: num('duration', 5),
+    volume: num('volume', 0.7),
+    wheelSize: num('size', 480),
+    theme: get('theme') || 'cyberpunk',
+    removeWinnerOnLand: get('remove_winner') === 'true'
+  };
+}
+
 class StateManager {
   constructor() {
     this.segments = [];
@@ -68,156 +92,112 @@ class StateManager {
     this.theme = 'cyberpunk';
     this.removeWinnerOnLand = false;
     this.isSpinning = false;
-    this.listeners = [];
+    this.onChange = null;
 
     this.loadFromStorage();
   }
 
-  subscribe(callback) {
-    this.listeners.push(callback);
-    callback(this);
-  }
-
   notify() {
-    this.listeners.forEach(callback => callback(this));
+    this.saveToStorage();
+    if (this.onChange) this.onChange(this);
   }
 
   loadFromStorage() {
+    let saved = null;
     try {
-      const storedSegments = localStorage.getItem('spinwheel_segments');
-      const storedHistory = localStorage.getItem('spinwheel_history');
-      const storedDuration = localStorage.getItem('spinwheel_duration');
-      const storedVolume = localStorage.getItem('spinwheel_volume');
-      const storedTheme = localStorage.getItem('spinwheel_theme');
-      const storedRemoveWinner = localStorage.getItem('spinwheel_remove_winner');
-
-      if (storedSegments) {
-        const rawSegs = JSON.parse(storedSegments);
-        this.segments = rawSegs.map(s => ({
-          id: s.id || 'seg_' + Math.random().toString(36).substr(2, 4),
-          label: s.label || 'Task',
-          weight: Math.max(1, parseInt(s.weight, 10) || 1),
-          color: s.color || '#8b5cf6'
-        }));
-      } else {
-        this.segments = [...PRESETS.decisions];
-      }
-
-      if (storedHistory) {
-        this.history = JSON.parse(storedHistory);
-      }
-
-      if (storedDuration) {
-        this.spinDuration = parseInt(storedDuration, 10);
-      }
-
-      if (storedVolume) {
-        this.volume = parseFloat(storedVolume);
-      }
-
-      if (storedTheme) {
-        this.theme = storedTheme;
-      }
-
-      if (storedRemoveWinner) {
-        this.removeWinnerOnLand = storedRemoveWinner === 'true';
-      }
-
-      const storedWheelSize = localStorage.getItem('spinwheel_size');
-      if (storedWheelSize) {
-        this.wheelSize = parseInt(storedWheelSize, 10);
-      } else {
-        this.wheelSize = 480;
-      }
+      saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || readLegacyStorage();
     } catch (e) {
       console.error('Failed to load local storage state:', e);
-      this.segments = [...PRESETS.decisions];
     }
+
+    if (saved) {
+      for (const field of SAVED_FIELDS) {
+        if (saved[field] !== undefined && saved[field] !== null) this[field] = saved[field];
+      }
+    }
+
+    // Stored segments can be stale or hand-edited, so backfill anything missing.
+    this.segments = this.segments.map(s => ({
+      id: s.id || crypto.randomUUID(),
+      label: s.label || 'Task',
+      weight: Math.max(1, parseInt(s.weight, 10) || 1),
+      color: s.color || '#8b5cf6'
+    }));
+
+    if (this.segments.length === 0) this.segments = this.segmentsFrom('decisions');
   }
 
   saveToStorage() {
-    try {
-      const themeToSave = this.theme === 'islay' ? (this.previousTheme || 'cyberpunk') : this.theme;
-      const segmentsToSave = this.theme === 'islay' ? (this.previousSegments || this.segments) : this.segments;
+    // Islay is a temporary costume: persist whatever was underneath it.
+    const source = this.theme === 'islay'
+      ? { ...this, theme: this.previousTheme || 'cyberpunk', segments: this.previousSegments || this.segments }
+      : this;
+    const blob = {};
+    for (const field of SAVED_FIELDS) blob[field] = source[field];
 
-      localStorage.setItem('spinwheel_segments', JSON.stringify(segmentsToSave));
-      localStorage.setItem('spinwheel_history', JSON.stringify(this.history));
-      localStorage.setItem('spinwheel_duration', this.spinDuration.toString());
-      localStorage.setItem('spinwheel_volume', this.volume.toString());
-      localStorage.setItem('spinwheel_theme', themeToSave);
-      localStorage.setItem('spinwheel_remove_winner', this.removeWinnerOnLand.toString());
-      localStorage.setItem('spinwheel_size', this.wheelSize.toString());
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
     } catch (e) {
       console.error('Failed to save to local storage:', e);
     }
   }
 
+  // Build a fresh segment list from a preset. A preset may pin its own colours
+  // (yes/no/maybe); otherwise segments take the active theme's palette.
+  segmentsFrom(presetName) {
+    const palette = THEME_PALETTES[this.theme] || THEME_PALETTES.cyberpunk;
+    return PRESETS[presetName].map((seg, idx) => ({
+      ...seg,
+      id: crypto.randomUUID(),
+      color: seg.color || palette[idx % palette.length]
+    }));
+  }
+
   setRemoveWinner(val) {
     this.removeWinnerOnLand = !!val;
-    this.saveToStorage();
     this.notify();
   }
 
   setWheelSize(val) {
     this.wheelSize = parseInt(val, 10);
-    this.saveToStorage();
     this.notify();
   }
 
   addSegment(label, weight = 1) {
     if (this.isSpinning) return;
     const palette = THEME_PALETTES[this.theme] || THEME_PALETTES.cyberpunk;
-    const colorIndex = this.segments.length % palette.length;
-    const parsedWeight = Math.max(1, parseInt(weight, 10) || 1);
-    const newSeg = {
-      id: 'seg_' + Date.now() + Math.random().toString(36).substr(2, 4),
+    this.segments.push({
+      id: crypto.randomUUID(),
       label: label.trim(),
-      weight: parsedWeight,
-      color: palette[colorIndex]
-    };
-    this.segments.push(newSeg);
-    this.saveToStorage();
+      weight: Math.max(1, parseInt(weight, 10) || 1),
+      color: palette[this.segments.length % palette.length]
+    });
     this.notify();
   }
 
   removeSegment(id) {
     if (this.isSpinning) return;
     this.segments = this.segments.filter(seg => seg.id !== id);
-    if (this.segments.length === 0) {
-      const palette = THEME_PALETTES[this.theme] || THEME_PALETTES.cyberpunk;
-      this.segments.push({
-        id: 'seg_default',
-        label: '✨ Task A',
-        weight: 1,
-        color: palette[0]
-      });
-    }
-    this.saveToStorage();
+    if (this.segments.length === 0) this.segments = this.defaultSegment();
     this.notify();
   }
 
   clearAllSegments() {
     if (this.isSpinning) return;
-    const palette = THEME_PALETTES[this.theme] || THEME_PALETTES.cyberpunk;
-    this.segments = [
-      {
-        id: 'seg_default',
-        label: '✨ Task A',
-        weight: 1,
-        color: palette[0]
-      }
-    ];
-    this.saveToStorage();
+    this.segments = this.defaultSegment();
     this.notify();
+  }
+
+  defaultSegment() {
+    const palette = THEME_PALETTES[this.theme] || THEME_PALETTES.cyberpunk;
+    return [{ id: crypto.randomUUID(), label: '✨ Task A', weight: 1, color: palette[0] }];
   }
 
   updateSegmentWeight(id, weight) {
     if (this.isSpinning) return;
-    const cleanWeight = Math.max(1, Math.min(100, parseInt(weight, 10) || 1));
     const seg = this.segments.find(s => s.id === id);
     if (seg) {
-      seg.weight = cleanWeight;
-      this.saveToStorage();
+      seg.weight = Math.max(1, Math.min(100, parseInt(weight, 10) || 1));
       this.notify();
     }
   }
@@ -227,85 +207,60 @@ class StateManager {
     const seg = this.segments.find(s => s.id === id);
     if (seg) {
       seg.color = color;
-      this.saveToStorage();
       this.notify();
     }
   }
 
   loadPreset(presetName) {
-    if (this.isSpinning) return;
-    if (PRESETS[presetName]) {
-      const palette = THEME_PALETTES[this.theme] || THEME_PALETTES.cyberpunk;
-      this.segments = PRESETS[presetName].map((seg, idx) => ({
-        id: `seg_preset_${presetName}_${idx}_${Date.now()}`,
-        ...seg,
-        color: palette[idx % palette.length]
-      }));
-      this.saveToStorage();
-      this.notify();
-    }
+    if (this.isSpinning || !PRESETS[presetName]) return;
+    this.segments = this.segmentsFrom(presetName);
+    this.notify();
   }
 
   setSpinDuration(duration) {
     this.spinDuration = Math.max(2, Math.min(10, duration));
-    this.saveToStorage();
     this.notify();
   }
 
   setVolume(vol) {
     this.volume = Math.max(0, Math.min(1, vol));
-    this.saveToStorage();
     this.notify();
   }
 
   toggleTheme() {
-    const currentIdx = THEMES.findIndex(t => t.id === this.theme);
-    const nextIdx = (currentIdx + 1) % THEMES.length;
-    this.theme = THEMES[nextIdx].id;
-    document.body.setAttribute('data-theme', this.theme);
-    
+    const nextIdx = (THEME_CYCLE.indexOf(this.theme) + 1) % THEME_CYCLE.length;
+    this.setTheme(THEME_CYCLE[nextIdx]);
     // Smoothly apply theme-matched colors to all items
     this.applyThemePalette();
-    
-    this.saveToStorage();
     this.notify();
+  }
+
+  setTheme(id) {
+    this.theme = id;
+    document.body.setAttribute('data-theme', id);
   }
 
   activateIslayEasterEgg() {
     if (this.isSpinning) return;
-    
+
     if (this.theme === 'islay') {
-      // Toggle OFF: Restore previous theme and segment list
-      this.theme = this.previousTheme || 'cyberpunk';
-      document.body.setAttribute('data-theme', this.theme);
-      
-      if (this.previousSegments && this.previousSegments.length > 0) {
-        this.segments = [...this.previousSegments];
-      } else {
-        this.segments = [...PRESETS.decisions];
-      }
-      
+      // Toggle OFF: restore the theme and segment list we stashed on the way in
+      this.setTheme(this.previousTheme || 'cyberpunk');
+      this.segments = this.previousSegments && this.previousSegments.length
+        ? [...this.previousSegments]
+        : this.segmentsFrom('decisions');
       this.applyThemePalette();
     } else {
-      // Toggle ON: Cache current theme and segments
+      // Toggle ON: stash the current theme and segments
       this.previousTheme = this.theme;
       this.previousSegments = [...this.segments];
-      
-      this.theme = 'islay';
-      document.body.setAttribute('data-theme', 'islay');
-      
-      const palette = THEME_PALETTES.islay;
-      this.segments = PRESETS.whisky.map((seg, idx) => ({
-        id: `seg_whisky_${idx}_${Date.now()}`,
-        ...seg,
-        color: palette[idx % palette.length]
-      }));
-      
-      window.audioSynth.init();
+
+      this.setTheme('islay');
+      this.segments = this.segmentsFrom('whisky');
+
       window.audioSynth.playChime();
     }
-    
-    this.saveToStorage();
+
     this.notify();
   }
 
@@ -316,31 +271,19 @@ class StateManager {
     });
   }
 
-  getThemeDetails() {
-    if (this.theme === 'islay') {
-      return { id: 'islay', name: 'Islay Highlands', bg: '#121511' };
-    }
-    return THEMES.find(t => t.id === this.theme) || THEMES[0];
-  }
-
   addHistory(label, color) {
-    const historyItem = {
-      id: 'hist_' + Date.now(),
+    this.history.unshift({
+      id: crypto.randomUUID(),
       label,
       color,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    };
-    this.history.unshift(historyItem);
-    if (this.history.length > 10) {
-      this.history.pop();
-    }
-    this.saveToStorage();
+    });
+    if (this.history.length > 10) this.history.pop();
     this.notify();
   }
 
   clearHistory() {
     this.history = [];
-    this.saveToStorage();
     this.notify();
   }
 

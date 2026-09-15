@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const WheelController = window.WheelController;
 
   // Initialize Wheel controller
-  const wheel = new WheelController('wheelCanvas', state, (winner) => {
+  const wheel = new WheelController(state, (winner) => {
     winnerName.textContent = winner.label;
     winnerName.style.borderBottom = `4px solid ${winner.color}`;
     
@@ -63,15 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
   wheelSizeInput.value = state.wheelSize;
   wheelSizeVal.textContent = `${state.wheelSize}px`;
 
-  // Subscribe to State modifications to automatically refresh the view
-  state.subscribe((currentState) => {
+  // Re-render whenever state changes
+  state.onChange = (currentState) => {
     wheel.initCanvas();
     wheel.draw();
     renderSegmentList(currentState.segments);
     renderHistoryList(currentState.history);
 
-    const themeName = currentState.getThemeDetails().name;
-    themeTogglerBtn.querySelector('span').textContent = `Theme: ${themeName}`;
+    themeTogglerBtn.querySelector('span').textContent = `Theme: ${THEMES[currentState.theme]}`;
 
     // Toggle Title and Brand Header for Islay Easter Egg
     const brandHeader = document.querySelector('.brand h1');
@@ -83,16 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (brandHeader) brandHeader.textContent = 'The Task Wheel';
     }
 
-    if (currentState.isSpinning) {
-      spinBtn.disabled = true;
-      spinBtn.textContent = '🎰';
-      toggleControls(true);
-    } else {
-      spinBtn.disabled = false;
-      spinBtn.textContent = 'Spin';
-      toggleControls(false);
-    }
-  });
+    document.body.classList.toggle('spinning', currentState.isSpinning);
+    spinBtn.disabled = currentState.isSpinning;
+    spinBtn.textContent = currentState.isSpinning ? '🎰' : 'Spin';
+  };
+  state.onChange(state);
 
   // Render the segment list items editor
   function renderSegmentList(segments) {
@@ -109,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span style="font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${seg.label}">${seg.label}</span>
         <input type="number" class="weight-input" data-id="${seg.id}" min="1" max="100" value="${seg.weight}" title="Optional Weight">
         <button class="btn-icon-delete" data-id="${seg.id}" title="Remove Item">
-          <i data-lucide="trash-2" style="width: 1.15rem; height: 1.15rem;"></i>
+          <svg class="icon" viewBox="0 0 24 24" style="width: 1.15rem; height: 1.15rem;"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       `;
 
@@ -130,8 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       segmentListContainer.appendChild(item);
     });
-
-    lucide.createIcons();
   }
 
   // Render spin history
@@ -154,22 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="history-time">${hist.timestamp}</span>
       `;
       historyListContainer.appendChild(item);
-    });
-  }
-
-  // Toggle user editing elements during the spin
-  function toggleControls(disable) {
-    const inputs = document.querySelectorAll('.segment-item input, .segment-item button, #newItemLabel, #newItemWeight, #newItemMultiplier, #addSegmentForm button, .preset-btn, #themeTogglerBtn, #clearItemsBtn, #removeWinnerToggle');
-    inputs.forEach(el => {
-      if (disable) {
-        el.setAttribute('disabled', 'true');
-        el.style.opacity = '0.5';
-        el.style.pointerEvents = 'none';
-      } else {
-        el.removeAttribute('disabled');
-        el.style.opacity = '1';
-        el.style.pointerEvents = 'auto';
-      }
     });
   }
 
@@ -197,16 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Spin Button trigger
-  spinBtn.addEventListener('click', () => {
-    audioSynth.init();
-    wheel.spin();
-  });
+  spinBtn.addEventListener('click', () => wheel.spin());
 
   // Keyboard shortcut: Spacebar to spin
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT' && !state.isSpinning) {
       e.preventDefault();
-      audioSynth.init();
       wheel.spin();
     }
   });
