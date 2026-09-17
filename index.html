@@ -22,6 +22,38 @@
     </div>
   </div>
 
+  <!-- Feedback Modal -->
+  <div class="modal-overlay" id="feedbackModal">
+    <div class="modal-content feedback-modal">
+      <button class="feedback-close" id="feedbackCloseBtn" aria-label="Close feedback">&times;</button>
+      <h2 class="feedback-title">Send Feedback</h2>
+      <p class="feedback-sub">Found a bug or have an idea? Pick whichever route suits you.</p>
+
+      <div class="feedback-route-label">With a GitHub account</div>
+      <div class="feedback-links">
+        <a class="feedback-link" href="https://github.com/motodale/adhd-task-manager/issues/new?template=bug_report.md" target="_blank" rel="noopener noreferrer">Report a bug</a>
+        <a class="feedback-link" href="https://github.com/motodale/adhd-task-manager/issues/new?template=feature_request.md" target="_blank" rel="noopener noreferrer">Request a feature</a>
+      </div>
+
+      <div class="feedback-divider"><span>or without a GitHub account</span></div>
+
+      <form class="feedback-form" id="feedbackForm">
+        <input type="hidden" name="_subject" id="feedbackSubject" value="Task Wheel feedback">
+        <input type="text" name="_gotcha" class="feedback-gotcha" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <select class="input-glow" id="feedbackType" name="type">
+          <option value="Bug">Bug</option>
+          <option value="Feature">Feature request</option>
+          <option value="Other">Other</option>
+        </select>
+        <textarea class="input-glow" id="feedbackMessage" name="message" rows="4" maxlength="2000" placeholder="What happened, or what would you like to see?" required></textarea>
+        <input type="email" class="input-glow" id="feedbackEmail" name="email" placeholder="Your email" autocomplete="off" required>
+        <p class="feedback-note">Your email is only used to reply to you. It is never shown on the site or shared.</p>
+        <button type="submit" class="btn-primary feedback-submit" id="feedbackSubmitBtn">Send feedback</button>
+        <p class="feedback-status" id="feedbackStatus" role="status"></p>
+      </form>
+    </div>
+  </div>
+
   <header>
     <div class="brand">
       <svg xmlns="http://www.w3.org/2000/svg" class="brand-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -30,6 +62,14 @@
       <h1>The Task Wheel</h1>
     </div>
     <div class="header-controls">
+      <button class="theme-btn restore-wheel-btn" id="restoreWheelBtn" hidden>
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>
+        <span>Restore my wheel</span>
+      </button>
+      <button class="theme-btn" id="feedbackOpenBtn">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Feedback</span>
+      </button>
       <button class="theme-btn" id="themeTogglerBtn">
         <svg class="icon" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
         <span>Theme: Cyberpunk</span>
@@ -60,10 +100,16 @@
             <svg class="icon" viewBox="0 0 24 24"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>
             Wheel Items
           </h2>
-          <button class="clear-btn" id="clearItemsBtn" title="Clear All Items">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            Clear All
-          </button>
+          <div class="items-actions">
+            <button class="clear-btn shuffle-btn" id="shuffleItemsBtn" title="Shuffle the order of the items">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="M4 4l5 5"/></svg>
+              Shuffle
+            </button>
+            <button class="clear-btn" id="clearItemsBtn" title="Clear All Items">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Clear All
+            </button>
+          </div>
         </div>
         <div class="segment-manager">
           <form class="add-segment-form" id="addSegmentForm">

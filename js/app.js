@@ -11,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const historyListContainer = document.getElementById('historyListContainer');
   const clearHistoryBtn = document.getElementById('clearHistoryBtn');
   const clearItemsBtn = document.getElementById('clearItemsBtn');
+  const shuffleItemsBtn = document.getElementById('shuffleItemsBtn');
   const themeTogglerBtn = document.getElementById('themeTogglerBtn');
+  const restoreWheelBtn = document.getElementById('restoreWheelBtn');
   const spinDurationInput = document.getElementById('spinDurationInput');
   const durationVal = document.getElementById('durationVal');
   const volumeInput = document.getElementById('volumeInput');
@@ -24,6 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const winnerModal = document.getElementById('winnerModal');
   const winnerName = document.getElementById('winnerName');
   const closeModalBtn = document.getElementById('closeModalBtn');
+
+  // Feedback Elements
+  const feedbackModal = document.getElementById('feedbackModal');
+  const feedbackOpenBtn = document.getElementById('feedbackOpenBtn');
+  const feedbackCloseBtn = document.getElementById('feedbackCloseBtn');
+  const feedbackForm = document.getElementById('feedbackForm');
+  const feedbackType = document.getElementById('feedbackType');
+  const feedbackSubject = document.getElementById('feedbackSubject');
+  const feedbackSubmitBtn = document.getElementById('feedbackSubmitBtn');
+  const feedbackStatus = document.getElementById('feedbackStatus');
+  const FEEDBACK_ENDPOINT = 'https://formspree.io/f/xeaoqpkg';
 
   // Load from global state
   const state = window.state;
@@ -71,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistoryList(currentState.history);
 
     themeTogglerBtn.querySelector('span').textContent = `Theme: ${THEMES[currentState.theme]}`;
+    restoreWheelBtn.hidden = !currentState.islayActive;
 
     // Toggle Title and Brand Header for Islay Easter Egg
     const brandHeader = document.querySelector('.brand h1');
@@ -177,7 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keyboard shortcut: Spacebar to spin
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT' && !state.isSpinning) {
+    const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+    const feedbackOpen = feedbackModal.classList.contains('active');
+    if (e.code === 'Space' && !typing && !feedbackOpen && !state.isSpinning) {
       e.preventDefault();
       wheel.spin();
     }
@@ -186,6 +202,56 @@ document.addEventListener('DOMContentLoaded', () => {
   // Modal Close trigger
   closeModalBtn.addEventListener('click', () => {
     winnerModal.classList.remove('active');
+  });
+
+  // Feedback modal open/close
+  const closeFeedback = () => feedbackModal.classList.remove('active');
+
+  feedbackOpenBtn.addEventListener('click', () => {
+    feedbackModal.classList.add('active');
+  });
+
+  feedbackCloseBtn.addEventListener('click', closeFeedback);
+
+  feedbackModal.addEventListener('click', (e) => {
+    if (e.target === feedbackModal) closeFeedback();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFeedback();
+  });
+
+  // Anonymous feedback submit
+  feedbackForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    feedbackSubject.value = `Task Wheel feedback: ${feedbackType.value}`;
+    feedbackSubmitBtn.disabled = true;
+    feedbackStatus.className = 'feedback-status';
+    feedbackStatus.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(FEEDBACK_ENDPOINT, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: new FormData(feedbackForm)
+      });
+
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
+      feedbackForm.reset();
+      feedbackStatus.className = 'feedback-status is-success';
+      feedbackStatus.textContent = 'Thanks! Your feedback was sent.';
+    } catch (err) {
+      feedbackStatus.className = 'feedback-status is-error';
+      feedbackStatus.textContent = 'Could not send. Please try the GitHub links above.';
+    } finally {
+      feedbackSubmitBtn.disabled = false;
+    }
+  });
+
+  // Undo the easter egg and put the real wheel back
+  restoreWheelBtn.addEventListener('click', () => {
+    state.exitIslay();
   });
 
   // Preset buttons
@@ -224,6 +290,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Clear All Wheel Items
   clearItemsBtn.addEventListener('click', () => {
     state.clearAllSegments();
+  });
+
+  // Shuffle the order of the wheel items
+  shuffleItemsBtn.addEventListener('click', () => {
+    state.shuffleSegments();
   });
 
   // Toggle remove winner on land

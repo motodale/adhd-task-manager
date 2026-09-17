@@ -94,6 +94,12 @@ class StateManager {
     this.isSpinning = false;
     this.onChange = null;
 
+    // The Islay costume. Never persisted: a reload always drops back to the
+    // real wheel stashed in previousSegments.
+    this.islayActive = false;
+    this.previousTheme = null;
+    this.previousSegments = null;
+
     this.loadFromStorage();
   }
 
@@ -128,9 +134,15 @@ class StateManager {
   }
 
   saveToStorage() {
-    // Islay is a temporary costume: persist whatever was underneath it.
-    const source = this.theme === 'islay'
-      ? { ...this, theme: this.previousTheme || 'cyberpunk', segments: this.previousSegments || this.segments }
+    // Islay is a temporary costume: persist whatever was underneath it. Keyed
+    // off islayActive, not the theme, so switching theme mid-costume cannot
+    // write the whisky segments over the user's real wheel.
+    const source = this.islayActive
+      ? {
+          ...this,
+          theme: this.theme === 'islay' ? (this.previousTheme || 'cyberpunk') : this.theme,
+          segments: this.previousSegments || this.segments
+        }
       : this;
     const blob = {};
     for (const field of SAVED_FIELDS) blob[field] = source[field];
@@ -185,6 +197,17 @@ class StateManager {
   clearAllSegments() {
     if (this.isSpinning) return;
     this.segments = this.defaultSegment();
+    this.notify();
+  }
+
+  // Fisher-Yates. Each segment moves whole, so a hand-picked colour stays with
+  // its item. Order is cosmetic: a slice's odds are its weight / total weight.
+  shuffleSegments() {
+    if (this.isSpinning) return;
+    for (let i = this.segments.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.segments[i], this.segments[j]] = [this.segments[j], this.segments[i]];
+    }
     this.notify();
   }
 
@@ -243,24 +266,40 @@ class StateManager {
   activateIslayEasterEgg() {
     if (this.isSpinning) return;
 
-    if (this.theme === 'islay') {
-      // Toggle OFF: restore the theme and segment list we stashed on the way in
-      this.setTheme(this.previousTheme || 'cyberpunk');
-      this.segments = this.previousSegments && this.previousSegments.length
-        ? [...this.previousSegments]
-        : this.segmentsFrom('decisions');
-      this.applyThemePalette();
-    } else {
-      // Toggle ON: stash the current theme and segments
-      this.previousTheme = this.theme;
-      this.previousSegments = [...this.segments];
-
-      this.setTheme('islay');
-      this.segments = this.segmentsFrom('whisky');
-
-      window.audioSynth.playChime();
+    if (this.islayActive) {
+      this.exitIslay();
+      return;
     }
 
+    this.previousTheme = this.theme;
+    this.previousSegments = [...this.segments];
+    this.islayActive = true;
+
+    this.setTheme('islay');
+    this.segments = this.segmentsFrom('whisky');
+
+    window.audioSynth.playChime();
+
+    this.notify();
+  }
+
+  // Puts the real wheel back. Leaves a theme the user picked during the
+  // costume alone; only the Islay theme itself is reverted.
+  exitIslay() {
+    if (this.isSpinning || !this.islayActive) return;
+
+    if (this.theme === 'islay') this.setTheme(this.previousTheme || 'cyberpunk');
+
+    this.segments = this.previousSegments && this.previousSegments.length
+      ? [...this.previousSegments]
+      : this.segmentsFrom('decisions');
+
+    this.islayActive = false;
+    this.previousTheme = null;
+    this.previousSegments = null;
+
+    // No applyThemePalette here on purpose: the stashed segments already carry
+    // the colours they had, including any the user picked by hand.
     this.notify();
   }
 

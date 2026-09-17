@@ -167,6 +167,17 @@ header {
   box-shadow: 0 0 12px var(--accent-glow);
 }
 
+/* .theme-btn sets display:flex, which would otherwise beat the [hidden] default. */
+.theme-btn[hidden] {
+  display: none;
+}
+
+/* Escape hatch out of the easter egg: stands out from the other header buttons. */
+.restore-wheel-btn {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
 /* Layout container */
 .app-container {
   display: grid;
@@ -309,6 +320,12 @@ canvas#wheelCanvas {
 
 .items-header .card-title {
   margin-bottom: 0;
+}
+
+.items-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 #newItemWeight {
@@ -623,6 +640,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: #ef4444;
 }
 
+/* Shuffle is not destructive, so it must not borrow Clear All's red hover.
+   Declared after .clear-btn:hover: same specificity, later rule wins. */
+.shuffle-btn:hover {
+  color: var(--accent-primary);
+}
+
 .history-list {
   max-height: 200px;
   overflow-y: auto;
@@ -759,6 +782,157 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .modal-btn:hover {
   transform: scale(1.04);
   box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+/* Feedback modal */
+.feedback-modal {
+  padding: 2rem;
+  text-align: left;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.feedback-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.feedback-close:hover {
+  color: var(--accent-primary);
+}
+
+.feedback-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.feedback-sub {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.feedback-route-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent-secondary);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.feedback-links {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.feedback-link {
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  text-decoration: none;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--transition-smooth);
+}
+
+.feedback-link:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.feedback-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.feedback-divider::before,
+.feedback-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--card-border);
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.feedback-form .input-glow {
+  flex: none;
+  width: 100%;
+}
+
+.feedback-form textarea.input-glow {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.feedback-form select.input-glow option {
+  background: var(--bg-secondary);
+  color: var(--text-main);
+}
+
+/* Spam trap: bots fill this, humans never see it. Formspree drops those submissions. */
+.feedback-gotcha {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.feedback-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: -0.25rem 0 0;
+}
+
+.feedback-submit {
+  justify-content: center;
+}
+
+.feedback-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.feedback-status {
+  font-size: 0.85rem;
+  min-height: 1.2em;
+  margin: 0;
+}
+
+.feedback-status.is-error {
+  color: #f87171;
+}
+
+.feedback-status.is-success {
+  color: var(--accent-secondary);
 }
 
 /* Background Particle Confetti Canvas overlay */

@@ -18,6 +18,7 @@ No build step and no dependencies. Open `index.html` in a browser, or serve the 
 | Multiplier, 1–500 | Adds that many numbered copies: `Laundry #1`, `Laundry #2`, and so on. |
 | Color dot | Recolors one slice. |
 | Trash icon | Deletes one slice. |
+| Shuffle | Reorders the items at random. This changes how the wheel looks, not the odds. A slice still wins on its weight. |
 | Clear All | Replaces the whole list with one blank slice. |
 | Presets | Loads a ready-made list: Yes/No/Maybe, numbers 1–5, or daily tasks. |
 | Spin Duration, 2–10s | Sets how long the wheel coasts to a stop. |
@@ -25,6 +26,7 @@ No build step and no dependencies. Open `index.html` in a browser, or serve the 
 | Wheel Size, 300–750px | Resizes the wheel. The wheel shrinks further to fit a narrow window. |
 | Remove Winner on Land | Deletes the winning slice 1.5 seconds after the wheel stops. |
 | Theme button | Cycles through 7 themes. |
+| Feedback button | Opens the feedback box. Report a bug or request a feature on GitHub, or send a message direct if you have no GitHub account. The direct form needs an email address so replies can reach you. |
 | Spin History | Shows the last 10 winners and the time each one landed. **Clear** empties the list. |
 
 Every setting and the wheel itself save to `localStorage`. Your wheel is still there when you come back.
